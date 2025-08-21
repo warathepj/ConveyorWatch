@@ -69,12 +69,12 @@ const cubesPerMinuteInput = document.getElementById('cubesPerMinute');
 if (cubesPerMinuteInput) {
     cubesPerMinuteInput.addEventListener('change', (event) => {
         const newValue = parseFloat(event.target.value);
-        if (!isNaN(newValue) && newValue > 0) {
+        if (!isNaN(newValue) && newValue >= 0) { // Allow 0 as a valid input
             cubesPerMinute = newValue;
-            spawnInterval = 60 / cubesPerMinute;
+            spawnInterval = newValue === 0 ? Infinity : 60 / newValue; // Set to Infinity if 0
             console.log(`Cubes per minute set to: ${cubesPerMinute}, Spawn interval: ${spawnInterval} seconds`);
         } else {
-            console.warn('Invalid input for cubes per minute. Please enter a positive number.');
+            console.warn('Invalid input for cubes per minute. Please enter a non-negative number.');
         }
     });
 }
@@ -86,24 +86,30 @@ function animate(currentTime) {
     const deltaTime = currentTime - previousTime;
     previousTime = currentTime;
 
-    // Initialize lastSpawnTime on the first frame
-    if (lastSpawnTime === 0) {
-        lastSpawnTime = currentTime;
-        activeGreenCubes.push(createGreenCube()); // Spawn the first cube immediately
-        console.log('First green cube spawned!');
-    }
+    // Only spawn if cubesPerMinute is greater than 0
+    if (cubesPerMinute > 0) {
+        // Initialize lastSpawnTime on the first frame
+        if (lastSpawnTime === 0) {
+            lastSpawnTime = currentTime;
+            activeGreenCubes.push(createGreenCube()); // Spawn the first cube immediately
+            console.log('First green cube spawned!');
+        }
 
-    // Continuous spawn logic
-    if ((currentTime - lastSpawnTime) >= spawnInterval) {
-        activeGreenCubes.push(createGreenCube());
-        lastSpawnTime = currentTime; // Reset timer for next spawn
-        console.log('New green cube spawned!');
+        // Continuous spawn logic
+        if ((currentTime - lastSpawnTime) >= spawnInterval) {
+            activeGreenCubes.push(createGreenCube());
+            lastSpawnTime = currentTime; // Reset timer for next spawn
+            console.log('New green cube spawned!');
+        }
     }
 
     // Update and manage all active green cubes
     for (let i = activeGreenCubes.length - 1; i >= 0; i--) {
         const cube = activeGreenCubes[i];
-        cube.position.x += velocity * deltaTime;
+        // Only move cubes if cubesPerMinute is greater than 0
+        if (cubesPerMinute > 0) {
+            cube.position.x += velocity * deltaTime;
+        }
 
         // Check if the green cube has reached or passed x = 10
         if (cube.position.x >= 10 && cube.parent) {
