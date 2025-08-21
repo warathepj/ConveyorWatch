@@ -46,16 +46,23 @@ scene.add( cube );
 cube.position.set(-20, 0, 0);
 
 // Green cube
-const greenCubeGeometry = new THREE.BoxGeometry(1, 1, 1);
-const greenCubeMaterial = new THREE.MeshBasicMaterial({ color: 0x00FF00 });
-const greenCube = new THREE.Mesh(greenCubeGeometry, greenCubeMaterial);
-scene.add(greenCube);
-greenCube.position.set(-45, 0.5, 0);
+// Function to create a green cube
+function createGreenCube() {
+    const greenCubeGeometry = new THREE.BoxGeometry(1, 1, 1);
+    const greenCubeMaterial = new THREE.MeshBasicMaterial({ color: 0x00FF00 });
+    const greenCube = new THREE.Mesh(greenCubeGeometry, greenCubeMaterial);
+    greenCube.position.set(-45, 0.5, 0);
+    scene.add(greenCube);
+    return greenCube;
+}
 
-
+const activeGreenCubes = [];
+activeGreenCubes.push(createGreenCube()); // Add the first green cube
 
 let previousTime = 0;
-const velocity = 1; // units per second
+const velocity = 5; // units per second
+let firstCubeSpawnTime = 0; // To track when the first cube was spawned
+let secondCubeSpawned = false; // Flag to ensure second cube is spawned only once
 
 function animate(currentTime) {
     requestAnimationFrame(animate);
@@ -64,8 +71,31 @@ function animate(currentTime) {
     const deltaTime = currentTime - previousTime;
     previousTime = currentTime;
 
-    // Move the green cube along the +x axis
-    greenCube.position.x += velocity * deltaTime;
+    if (firstCubeSpawnTime === 0 && activeGreenCubes.length > 0) {
+        firstCubeSpawnTime = currentTime;
+    }
+
+    // Spawn the second cube after 3 seconds
+    if (!secondCubeSpawned && firstCubeSpawnTime !== 0 && (currentTime - firstCubeSpawnTime) >= 3) {
+        activeGreenCubes.push(createGreenCube());
+        secondCubeSpawned = true;
+        console.log('Second green cube spawned!');
+    }
+
+    // Update and manage all active green cubes
+    for (let i = activeGreenCubes.length - 1; i >= 0; i--) {
+        const cube = activeGreenCubes[i];
+        cube.position.x += velocity * deltaTime;
+
+        // Check if the green cube has reached or passed x = 10
+        if (cube.position.x >= 10 && cube.parent) {
+            scene.remove(cube); // Remove from scene
+            cube.geometry.dispose(); // Dispose geometry
+            cube.material.dispose(); // Dispose material
+            activeGreenCubes.splice(i, 1); // Remove from array
+            console.log('Green cube destroyed!');
+        }
+    }
 
     controls.update(); // only required if controls.enableDamping or controls.autoRotate are set to true
     renderer.render(scene, camera);
