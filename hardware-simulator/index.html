@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Machine Speed Control</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .speed-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: #3b82f6;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: all 0.2s ease;
+        }
+        
+        .speed-slider::-webkit-slider-thumb:hover {
+            background: #2563eb;
+            transform: scale(1.1);
+        }
+        
+        .speed-slider::-moz-range-thumb {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: #3b82f6;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .speed-display {
+            transition: all 0.3s ease;
+        }
+        
+        .pulse-animation {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7);
+            }
+            70% {
+                box-shadow: 0 0 0 10px rgba(59, 130, 246, 0);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(59, 130, 246, 0);
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
+    <div class="w-full max-w-md bg-white rounded-2xl shadow-xl overflow-hidden">
+        <!-- Header -->
+        <div class="bg-gradient-to-r from-blue-500 to-blue-600 p-6 text-white">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-2xl font-bold">Production Speed Control</h1>
+                    <p class="text-blue-100">Adjust machine output rate</p>
+                </div>
+                <div class="bg-white/20 p-3 rounded-full">
+                    <i class="fas fa-cogs text-2xl"></i>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="p-6">
+            <!-- Speed Display -->
+            <div class="speed-display bg-gray-50 rounded-xl p-6 mb-8 text-center border border-gray-200 transition-all duration-300">
+                <p class="text-gray-500 uppercase text-sm font-medium mb-1">Current Speed</p>
+                <div class="flex items-end justify-center">
+                    <span id="speed-value" class="text-5xl font-bold text-blue-600">0</span>
+                    <span class="text-lg text-gray-500 ml-1 mb-1">pcs/min</span>
+                </div>
+                <div class="mt-2 h-2 bg-gray-200 rounded-full overflow-hidden">
+                    <div id="speed-bar" class="h-full bg-blue-500 rounded-full" style="width: 0%"></div>
+                </div>
+            </div>
+            
+            <!-- Speed Control -->
+            <div class="mb-8">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-gray-500 font-medium">Speed Setting</span>
+                    <span id="setting-value" class="text-blue-600 font-bold">0 pcs/min</span>
+                </div>
+                <input type="range" min="0" max="60" value="0" step="1" 
+                       class="speed-slider w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                       id="speed-slider">
+                <div class="flex justify-between text-xs text-gray-500 mt-1">
+                    <span>0</span>
+                    <span>15</span>
+                    <span>30</span>
+                    <span>45</span>
+                    <span>60</span>
+                </div>
+            </div>
+            
+            <!-- Control Buttons -->
+            <div class="grid grid-cols-3 gap-3">
+                <button id="decrease-btn" class="bg-gray-100 hover:bg-gray-200 text-gray-700 py-3 px-4 rounded-lg font-medium transition">
+                    <i class="fas fa-minus mr-2"></i> -5
+                </button>
+                <button id="stop-btn" class="bg-red-500 hover:bg-red-600 text-white py-3 px-4 rounded-lg font-medium transition">
+                    <i class="fas fa-stop mr-2"></i> Stop
+                </button>
+                <button id="increase-btn" class="bg-gray-100 hover:bg-gray-200 text-gray-700 py-3 px-4 rounded-lg font-medium transition">
+                    <i class="fas fa-plus mr-2"></i> +5
+                </button>
+            </div>
+            
+            <!-- Status Indicator -->
+            <div class="mt-8 flex items-center justify-center">
+                <div id="status-indicator" class="w-3 h-3 rounded-full bg-red-500 mr-2"></div>
+                <span id="status-text" class="text-sm font-medium">Machine Stopped</span>
+            </div>
+        </div>
+        
+        <!-- Footer -->
+        <div class="bg-gray-50 px-6 py-4 border-t border-gray-200 text-center text-sm text-gray-500">
+            <p>Production Line #4 • Last updated: <span id="timestamp">just now</span></p>
+        </div>
+    </div>
+
+    <script>
+        const speedSlider = document.getElementById('speed-slider');
+        const speedValue = document.getElementById('speed-value');
+        const settingValue = document.getElementById('setting-value');
+        const speedBar = document.getElementById('speed-bar');
+        const decreaseBtn = document.getElementById('decrease-btn');
+        const increaseBtn = document.getElementById('increase-btn');
+        const stopBtn = document.getElementById('stop-btn');
+        const statusIndicator = document.getElementById('status-indicator');
+        const statusText = document.getElementById('status-text');
+        const timestamp = document.getElementById('timestamp');
+        
+        let currentSpeed = 0;
+        let targetSpeed = 0;
+        let isRunning = false;
+        let updateInterval;
+        
+        // Update timestamp
+        function updateTimestamp() {
+            const now = new Date();
+            timestamp.textContent = now.toLocaleTimeString();
+        }
+        
+        // Simulate machine response
+        function simulateMachineResponse() {
+            if (currentSpeed < targetSpeed) {
+                currentSpeed += 1;
+            } else if (currentSpeed > targetSpeed) {
+                currentSpeed -= 1;
+            }
+            
+            updateDisplay();
+            
+            if (currentSpeed === targetSpeed) {
+                clearInterval(updateInterval);
+                if (targetSpeed === 0) {
+                    isRunning = false;
+                    updateStatus();
+                }
+            }
+        }
+        
+        // Update display
+        function updateDisplay() {
+            speedValue.textContent = currentSpeed;
+            const percentage = (currentSpeed / 60) * 100;
+            speedBar.style.width = `${percentage}%`;
+            
+            // Change color based on speed
+            if (currentSpeed >= 45) {
+                speedBar.classList.remove('bg-blue-500');
+                speedBar.classList.add('bg-red-500');
+                speedValue.classList.remove('text-blue-600');
+                speedValue.classList.add('text-red-600');
+            } else if (currentSpeed >= 30) {
+                speedBar.classList.remove('bg-blue-500', 'bg-red-500');
+                speedBar.classList.add('bg-yellow-500');
+                speedValue.classList.remove('text-blue-600', 'text-red-600');
+                speedValue.classList.add('text-yellow-600');
+            } else {
+                speedBar.classList.remove('bg-yellow-500', 'bg-red-500');
+                speedBar.classList.add('bg-blue-500');
+                speedValue.classList.remove('text-yellow-600', 'text-red-600');
+                speedValue.classList.add('text-blue-600');
+            }
+            
+            // Add pulse animation at high speeds
+            if (currentSpeed >= 50) {
+                speedValue.classList.add('pulse-animation');
+            } else {
+                speedValue.classList.remove('pulse-animation');
+            }
+        }
+        
+        // Update status
+        function updateStatus() {
+            if (isRunning) {
+                statusIndicator.classList.remove('bg-red-500');
+                statusIndicator.classList.add('bg-green-500');
+                statusText.textContent = 'Machine Running';
+            } else {
+                statusIndicator.classList.remove('bg-green-500');
+                statusIndicator.classList.add('bg-red-500');
+                statusText.textContent = 'Machine Stopped';
+            }
+        }
+        
+        // Function to send speed to backend via HTTP
+        async function sendSpeedToBackend(speed) {
+            try {
+                const response = await fetch('http://localhost:3001/update-speed', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ speed: speed }),
+                });
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                console.log('Speed sent successfully:', speed);
+            } catch (error) {
+                console.error('Error sending speed to backend:', error);
+            }
+        }
+
+        // Event listeners
+        speedSlider.addEventListener('input', function() {
+            targetSpeed = parseInt(this.value);
+            settingValue.textContent = `${targetSpeed} pcs/min`;
+            sendSpeedToBackend(targetSpeed); // Send speed to backend
+            
+            if (targetSpeed > 0 && !isRunning) {
+                isRunning = true;
+                updateStatus();
+            }
+            
+            if (updateInterval) clearInterval(updateInterval);
+            updateInterval = setInterval(simulateMachineResponse, 50);
+        });
+        
+        decreaseBtn.addEventListener('click', function() {
+            let newValue = parseInt(speedSlider.value) - 5;
+            if (newValue < 0) newValue = 0;
+            speedSlider.value = newValue;
+            targetSpeed = newValue;
+            settingValue.textContent = `${targetSpeed} pcs/min`;
+            sendSpeedToBackend(targetSpeed); // Send speed to backend
+            
+            if (updateInterval) clearInterval(updateInterval);
+            updateInterval = setInterval(simulateMachineResponse, 50);
+            
+            if (targetSpeed === 0) {
+                isRunning = false;
+                updateStatus();
+            } else if (!isRunning) {
+                isRunning = true;
+                updateStatus();
+            }
+        });
+        
+        increaseBtn.addEventListener('click', function() {
+            let newValue = parseInt(speedSlider.value) + 5;
+            if (newValue > 60) newValue = 60;
+            speedSlider.value = newValue;
+            targetSpeed = newValue;
+            settingValue.textContent = `${targetSpeed} pcs/min`;
+            sendSpeedToBackend(targetSpeed); // Send speed to backend
+            
+            if (updateInterval) clearInterval(updateInterval);
+            updateInterval = setInterval(simulateMachineResponse, 50);
+            
+            if (!isRunning) {
+                isRunning = true;
+                updateStatus();
+            }
+        });
+        
+        stopBtn.addEventListener('click', function() {
+            speedSlider.value = 0;
+            targetSpeed = 0;
+            settingValue.textContent = '0 pcs/min';
+            sendSpeedToBackend(targetSpeed); // Send speed to backend
+            
+            if (updateInterval) clearInterval(updateInterval);
+            updateInterval = setInterval(simulateMachineResponse, 30);
+            
+            isRunning = false;
+            updateStatus();
+        });
+        
+        // Initialize
+        updateTimestamp();
+        setInterval(updateTimestamp, 60000); // Update timestamp every minute
+    </script>
+</body>
+</html>
