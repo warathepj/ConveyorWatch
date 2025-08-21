@@ -60,8 +60,24 @@ const activeGreenCubes = [];
 
 let previousTime = 0;
 const velocity = 5; // units per second
-const spawnInterval = 3; // seconds
+let cubesPerMinute = 60; // Default value
+let spawnInterval = 60 / cubesPerMinute; // seconds
 let lastSpawnTime = 0; // To track when the last cube was spawned
+
+// Get the input element
+const cubesPerMinuteInput = document.getElementById('cubesPerMinute');
+if (cubesPerMinuteInput) {
+    cubesPerMinuteInput.addEventListener('change', (event) => {
+        const newValue = parseFloat(event.target.value);
+        if (!isNaN(newValue) && newValue > 0) {
+            cubesPerMinute = newValue;
+            spawnInterval = 60 / cubesPerMinute;
+            console.log(`Cubes per minute set to: ${cubesPerMinute}, Spawn interval: ${spawnInterval} seconds`);
+        } else {
+            console.warn('Invalid input for cubes per minute. Please enter a positive number.');
+        }
+    });
+}
 
 function animate(currentTime) {
     requestAnimationFrame(animate);
