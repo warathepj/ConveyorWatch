@@ -59,43 +59,46 @@ function createGreenCube() {
 const activeGreenCubes = [];
 
 let previousTime = 0;
-const velocity = 5; // units per second
-let cubesPerMinute = 60; // Default value, will be updated by server
-let spawnInterval = 60 / cubesPerMinute; // seconds
+const velocity = 5; // units per second, for cube movement
+let conveyorSpeed = 0; // Default value, will be updated by server (products per minute)
+let spawnInterval = Infinity; // seconds, initially no spawning
 let lastSpawnTime = 0; // To track when the last cube was spawned
 
-// Function to fetch countdown number from the server
-async function fetchCountdownNumber() {
+// Function to fetch conveyor speed from the server
+async function fetchConveyorSpeed() {
     try {
-        const response = await fetch('http://localhost:3000/countdownNumber');
+        const response = await fetch('http://localhost:3000/conveyorSpeed');
         const data = await response.json();
-        const newCubesPerMinute = data.countdownNumber;
-        const countdownDisplay = document.getElementById('countdown-display');
+        const newConveyorSpeed = data.conveyorSpeed;
+        const conveyorSpeedDisplay = document.getElementById('conveyor-speed-display');
 
-        if (!isNaN(newCubesPerMinute) && newCubesPerMinute >= 0) {
-            cubesPerMinute = newCubesPerMinute;
-            spawnInterval = newCubesPerMinute === 0 ? Infinity : 60 / newCubesPerMinute;
-            console.log(`Fetched cubes per minute: ${cubesPerMinute}, Spawn interval: ${spawnInterval} seconds`);
-            if (countdownDisplay) {
-                countdownDisplay.textContent = `Countdown: ${newCubesPerMinute}`;
+        if (!isNaN(newConveyorSpeed) && newConveyorSpeed >= 0) {
+            conveyorSpeed = newConveyorSpeed;
+            // Assuming conveyorSpeed directly relates to cubes per minute for spawning
+            // If conveyorSpeed is 0, spawnInterval is Infinity (no spawning)
+            // Otherwise, 60 units per minute / conveyorSpeed = seconds per unit
+            spawnInterval = conveyorSpeed === 0 ? Infinity : 60 / conveyorSpeed;
+            console.log(`Fetched conveyor speed: ${conveyorSpeed}, Spawn interval: ${spawnInterval} seconds`);
+            if (conveyorSpeedDisplay) {
+                conveyorSpeedDisplay.textContent = `Conveyor Speed: ${conveyorSpeed}`;
             }
         } else {
-            console.warn('Invalid countdownNumber received from server:', newCubesPerMinute);
+            console.warn('Invalid conveyorSpeed received from server:', newConveyorSpeed);
         }
     } catch (error) {
-        console.error('Error fetching countdown number:', error);
-        const countdownDisplay = document.getElementById('countdown-display');
-        if (countdownDisplay) {
-            countdownDisplay.textContent = `Countdown: Error`;
+        console.error('Error fetching conveyor speed:', error);
+        const conveyorSpeedDisplay = document.getElementById('conveyor-speed-display');
+        if (conveyorSpeedDisplay) {
+            conveyorSpeedDisplay.textContent = `Conveyor Speed: Error`;
         }
     }
 }
 
 // Fetch data every 2 seconds
-setInterval(fetchCountdownNumber, 2000);
+setInterval(fetchConveyorSpeed, 2000);
 
 // Initial fetch
-fetchCountdownNumber();
+fetchConveyorSpeed();
 
 function animate(currentTime) {
     requestAnimationFrame(animate);
@@ -104,9 +107,9 @@ function animate(currentTime) {
     const deltaTime = currentTime - previousTime;
     previousTime = currentTime;
 
-    // Only spawn if cubesPerMinute is greater than 0
-    if (cubesPerMinute > 0) {
-        // Initialize lastSpawnTime on the first frame
+    // Only spawn if conveyorSpeed is greater than 0
+    if (conveyorSpeed > 0) {
+        // Initialize lastSpawnTime on the first frame or if it was reset
         if (lastSpawnTime === 0) {
             lastSpawnTime = currentTime;
             activeGreenCubes.push(createGreenCube()); // Spawn the first cube immediately
@@ -124,8 +127,8 @@ function animate(currentTime) {
     // Update and manage all active green cubes
     for (let i = activeGreenCubes.length - 1; i >= 0; i--) {
         const cube = activeGreenCubes[i];
-        // Only move cubes if cubesPerMinute is greater than 0
-        if (cubesPerMinute > 0) {
+        // Only move cubes if conveyorSpeed is greater than 0 (meaning the conveyor is active)
+        if (conveyorSpeed > 0) {
             cube.position.x += velocity * deltaTime;
         }
 
