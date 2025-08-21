@@ -39,38 +39,36 @@ renderer.domElement.addEventListener('wheel', (event) => {
     controls.update();
 }, false);
 
-const geometry = new THREE.BoxGeometry(60, 1, 1);
-const material = new THREE.MeshBasicMaterial( { color: 0x00ff00 } );
+const geometry = new THREE.BoxGeometry(60, .5, 4);
+const material = new THREE.MeshBasicMaterial( { color: 0x808080 } );
 const cube = new THREE.Mesh( geometry, material );
 scene.add( cube );
 cube.position.set(-20, 0, 0);
 
-// Function to fetch random number and scale the cube
-async function fetchRandomNumberAndScaleCube() {
-    try {
-        const response = await fetch('http://localhost:3000/randomNumber');
-        const data = await response.json();
-        const randomNumber = data.randomNumber;
-        console.log('Fetched random number:', randomNumber);
+// Green cube
+const greenCubeGeometry = new THREE.BoxGeometry(1, 1, 1);
+const greenCubeMaterial = new THREE.MeshBasicMaterial({ color: 0x00FF00 });
+const greenCube = new THREE.Mesh(greenCubeGeometry, greenCubeMaterial);
+scene.add(greenCube);
+greenCube.position.set(-45, 0.5, 0);
 
-        // Scale the cube based on the random number (0-100)
-        // Max scale is 1 (original width), min scale is 0
-        cube.scale.x = randomNumber / 100;
-        cube.updateMatrix(); // Update the cube's matrix after scaling
-    } catch (error) {
-        console.error('Error fetching random number:', error);
-    }
+
+
+let previousTime = 0;
+const velocity = 1; // units per second
+
+function animate(currentTime) {
+    requestAnimationFrame(animate);
+
+    currentTime *= 0.001; // convert to seconds
+    const deltaTime = currentTime - previousTime;
+    previousTime = currentTime;
+
+    // Move the green cube along the +x axis
+    greenCube.position.x += velocity * deltaTime;
+
+    controls.update(); // only required if controls.enableDamping or controls.autoRotate are set to true
+    renderer.render(scene, camera);
 }
 
-// Initial fetch and then set interval for periodic updates
-fetchRandomNumberAndScaleCube();
-setInterval(fetchRandomNumberAndScaleCube, 3000); // Fetch every 3 seconds
-
-function animate() {
-	requestAnimationFrame( animate );
-
-	controls.update(); // only required if controls.enableDamping or controls.autoRotate are set to true
-	renderer.render( scene, camera );
-}
-
-animate();
+requestAnimationFrame(animate);
