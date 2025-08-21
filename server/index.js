@@ -7,16 +7,16 @@ const PORT = process.env.PORT || 3000;
 
 app.use(cors()); // Use cors middleware
 
-let currentNumber = 40; // Initialize currentNumber here so it's accessible to the API
+let currentSpeed = 0; // Initialize currentSpeed
 
 // MQTT Client setup
 const mqttClient = mqtt.connect('mqtt://localhost:1883'); // Connect to local Mosquitto broker
 
 mqttClient.on('connect', () => {
   console.log('Connected to MQTT broker');
-  mqttClient.subscribe('conveyor/countdown', (err) => {
+  mqttClient.subscribe('conveyor/speed', (err) => {
     if (!err) {
-      console.log('Subscribed to conveyor/countdown topic');
+      console.log('Subscribed to conveyor/speed topic');
     } else {
       console.error('Failed to subscribe:', err);
     }
@@ -24,11 +24,11 @@ mqttClient.on('connect', () => {
 });
 
 mqttClient.on('message', (topic, message) => {
-  if (topic === 'conveyor/countdown') {
-    const receivedNumber = parseInt(message.toString(), 10);
-    if (!isNaN(receivedNumber)) {
-      currentNumber = receivedNumber;
-      console.log(`Received countdown number from MQTT: ${currentNumber}`);
+  if (topic === 'conveyor/speed') {
+    const receivedSpeed = parseInt(message.toString(), 10);
+    if (!isNaN(receivedSpeed)) {
+      currentSpeed = receivedSpeed;
+      console.log(`Received conveyor speed from MQTT: ${currentSpeed}`);
     }
   }
 });
@@ -37,8 +37,9 @@ mqttClient.on('error', (err) => {
   console.error('MQTT Error:', err);
 });
 
-app.get('/countdownNumber', (req, res) => { // New endpoint for countdown
-  res.json({ countdownNumber: currentNumber });
+
+app.get('/conveyorSpeed', (req, res) => { // New endpoint for conveyor speed
+  res.json({ conveyorSpeed: currentSpeed });
 });
 
 app.listen(PORT, () => {
