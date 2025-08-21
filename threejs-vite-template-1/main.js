@@ -57,14 +57,11 @@ function createGreenCube() {
 }
 
 const activeGreenCubes = [];
-activeGreenCubes.push(createGreenCube()); // Add the first green cube
 
 let previousTime = 0;
 const velocity = 5; // units per second
-let firstCubeSpawnTime = 0; // To track when the first cube was spawned
-let secondCubeSpawned = false; // Flag to ensure second cube is spawned only once
-let secondCubeSpawnTime = 0; // To track when the second cube was spawned
-let thirdCubeSpawned = false; // Flag to ensure third cube is spawned only once
+const spawnInterval = 3; // seconds
+let lastSpawnTime = 0; // To track when the last cube was spawned
 
 function animate(currentTime) {
     requestAnimationFrame(animate);
@@ -73,23 +70,18 @@ function animate(currentTime) {
     const deltaTime = currentTime - previousTime;
     previousTime = currentTime;
 
-    if (firstCubeSpawnTime === 0 && activeGreenCubes.length > 0) {
-        firstCubeSpawnTime = currentTime;
+    // Initialize lastSpawnTime on the first frame
+    if (lastSpawnTime === 0) {
+        lastSpawnTime = currentTime;
+        activeGreenCubes.push(createGreenCube()); // Spawn the first cube immediately
+        console.log('First green cube spawned!');
     }
 
-    // Spawn the second cube after 3 seconds
-    if (!secondCubeSpawned && firstCubeSpawnTime !== 0 && (currentTime - firstCubeSpawnTime) >= 3) {
+    // Continuous spawn logic
+    if ((currentTime - lastSpawnTime) >= spawnInterval) {
         activeGreenCubes.push(createGreenCube());
-        secondCubeSpawned = true;
-        secondCubeSpawnTime = currentTime; // Record spawn time of second cube
-        console.log('Second green cube spawned!');
-    }
-
-    // Spawn the third cube after 3 seconds from the second cube's spawn
-    if (!thirdCubeSpawned && secondCubeSpawned && (currentTime - secondCubeSpawnTime) >= 3) {
-        activeGreenCubes.push(createGreenCube());
-        thirdCubeSpawned = true;
-        console.log('Third green cube spawned!');
+        lastSpawnTime = currentTime; // Reset timer for next spawn
+        console.log('New green cube spawned!');
     }
 
     // Update and manage all active green cubes
