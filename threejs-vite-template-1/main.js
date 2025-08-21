@@ -45,6 +45,27 @@ const cube = new THREE.Mesh( geometry, material );
 scene.add( cube );
 cube.position.set(-20, 0, 0);
 
+// Function to fetch random number and scale the cube
+async function fetchRandomNumberAndScaleCube() {
+    try {
+        const response = await fetch('http://localhost:3000/randomNumber');
+        const data = await response.json();
+        const randomNumber = data.randomNumber;
+        console.log('Fetched random number:', randomNumber);
+
+        // Scale the cube based on the random number (0-100)
+        // Max scale is 1 (original width), min scale is 0
+        cube.scale.x = randomNumber / 100;
+        cube.updateMatrix(); // Update the cube's matrix after scaling
+    } catch (error) {
+        console.error('Error fetching random number:', error);
+    }
+}
+
+// Initial fetch and then set interval for periodic updates
+fetchRandomNumberAndScaleCube();
+setInterval(fetchRandomNumberAndScaleCube, 3000); // Fetch every 3 seconds
+
 function animate() {
 	requestAnimationFrame( animate );
 
