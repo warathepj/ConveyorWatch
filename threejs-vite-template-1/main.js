@@ -60,24 +60,42 @@ const activeGreenCubes = [];
 
 let previousTime = 0;
 const velocity = 5; // units per second
-let cubesPerMinute = 60; // Default value
+let cubesPerMinute = 60; // Default value, will be updated by server
 let spawnInterval = 60 / cubesPerMinute; // seconds
 let lastSpawnTime = 0; // To track when the last cube was spawned
 
-// Get the input element
-const cubesPerMinuteInput = document.getElementById('cubesPerMinute');
-if (cubesPerMinuteInput) {
-    cubesPerMinuteInput.addEventListener('change', (event) => {
-        const newValue = parseFloat(event.target.value);
-        if (!isNaN(newValue) && newValue >= 0) { // Allow 0 as a valid input
-            cubesPerMinute = newValue;
-            spawnInterval = newValue === 0 ? Infinity : 60 / newValue; // Set to Infinity if 0
-            console.log(`Cubes per minute set to: ${cubesPerMinute}, Spawn interval: ${spawnInterval} seconds`);
+// Function to fetch countdown number from the server
+async function fetchCountdownNumber() {
+    try {
+        const response = await fetch('http://localhost:3000/countdownNumber');
+        const data = await response.json();
+        const newCubesPerMinute = data.countdownNumber;
+        const countdownDisplay = document.getElementById('countdown-display');
+
+        if (!isNaN(newCubesPerMinute) && newCubesPerMinute >= 0) {
+            cubesPerMinute = newCubesPerMinute;
+            spawnInterval = newCubesPerMinute === 0 ? Infinity : 60 / newCubesPerMinute;
+            console.log(`Fetched cubes per minute: ${cubesPerMinute}, Spawn interval: ${spawnInterval} seconds`);
+            if (countdownDisplay) {
+                countdownDisplay.textContent = `Countdown: ${newCubesPerMinute}`;
+            }
         } else {
-            console.warn('Invalid input for cubes per minute. Please enter a non-negative number.');
+            console.warn('Invalid countdownNumber received from server:', newCubesPerMinute);
         }
-    });
+    } catch (error) {
+        console.error('Error fetching countdown number:', error);
+        const countdownDisplay = document.getElementById('countdown-display');
+        if (countdownDisplay) {
+            countdownDisplay.textContent = `Countdown: Error`;
+        }
+    }
 }
+
+// Fetch data every 2 seconds
+setInterval(fetchCountdownNumber, 2000);
+
+// Initial fetch
+fetchCountdownNumber();
 
 function animate(currentTime) {
     requestAnimationFrame(animate);
