@@ -6,21 +6,23 @@ const PORT = process.env.PORT || 3000;
 
 app.use(cors()); // Use cors middleware
 
-function generateRandomNumber() {
-  return Math.floor(Math.random() * 101); // Generates a number between 0 and 100
-}
+let currentNumber = 40; // Initialize currentNumber here so it's accessible to the API
 
-app.get('/randomNumber', (req, res) => {
-  const randomNumber = generateRandomNumber();
-  res.json({ randomNumber });
+app.get('/countdownNumber', (req, res) => { // New endpoint for countdown
+  res.json({ countdownNumber: currentNumber });
 });
 
-console.log("Starting random number generation...");
+console.log("Starting countdown from 40 to 0 over 10 seconds...");
 
-setInterval(() => {
-  const randomNumber = generateRandomNumber();
-  console.log(`Generated random number: ${randomNumber}`);
-}, 3000); // 3000 milliseconds = 3 seconds
+const countdownInterval = setInterval(() => {
+  if (currentNumber >= 0) {
+    console.log(`Generated number: ${currentNumber}`);
+    currentNumber--;
+  } else {
+    console.log("Countdown finished.");
+    clearInterval(countdownInterval);
+  }
+}, 250); // 250 milliseconds = 0.25 seconds, for 40 steps in 10 seconds
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
