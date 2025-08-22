@@ -80,7 +80,7 @@ async function fetchConveyorSpeed() {
             spawnInterval = conveyorSpeed === 0 ? Infinity : 60 / conveyorSpeed;
             console.log(`Fetched conveyor speed: ${conveyorSpeed}, Spawn interval: ${spawnInterval} seconds`);
             if (conveyorSpeedDisplay) {
-                conveyorSpeedDisplay.textContent = `Conveyor Speed: ${conveyorSpeed}`;
+                conveyorSpeedDisplay.textContent = `pcs/min: ${conveyorSpeed}`;
             }
         } else {
             console.warn('Invalid conveyorSpeed received from server:', newConveyorSpeed);
